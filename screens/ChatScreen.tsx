@@ -1,73 +1,64 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList } from 'react-native';
 import ChatInput from '../components/ChatInput';
-import ResponseCarousel, { ModelResponse } from '../components/ResponseCarousel';
+import MessageCard from '../components/MessageCard';
 
-const MODELS = ['GPT-3.5', 'LLaMA-3', 'Claude'];
-
-type QASet = {
+type ChatMessage = {
 	id: string;
-	question: string;
-	responses: ModelResponse[];
+	from: 'You' | 'BhaiGPT';
+	text: string;
 };
 
-function simulateModelAnswer(model: string, question: string): Promise<string> {
-	const mock = {
-		'GPT-3.5': `GPT-3.5 answer to: "${question}"\n\nHere is a concise explanation and key points...`,
-		'LLaMA-3': `LLaMA-3 perspective: "${question}"\n\nHighlights, nuances, and alternative views...`,
-		'Claude': `Claude's take on: "${question}"\n\nReasoned, structured response with practical tips...`,
-	} as const;
-	const min = 400;
-	const jitter = Math.floor(Math.random() * 800);
-	return new Promise((resolve) => setTimeout(() => resolve(mock[model as keyof typeof mock]), min + jitter));
-}
+const OPENING_LINE = 'Bol bhai, kaisa hai?';
+
+const HINGLISH_RESPONSES: string[] = [
+	'Arre mast hu, tu bata? 😊',
+	'Chal badiya! Kya madad chahiye bhai?',
+	'Theek hoon yaar, seedha bol kya scene hai?',
+	'Ho jayega bhai, tension na le. Bata details.',
+];
 
 export const ChatScreen: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(false);
-	const [history, setHistory] = useState<QASet[]>([]);
+	const [messages, setMessages] = useState<ChatMessage[]>([
+		{ id: 'open', from: 'BhaiGPT', text: OPENING_LINE },
+	]);
+	const listRef = useRef<FlatList<ChatMessage>>(null);
 
-	const onSend = useCallback(async (question: string) => {
-		setIsLoading(true);
+	const onSend = useCallback(async (text: string) => {
 		const id = `${Date.now()}`;
-		const loadingResponses: ModelResponse[] = MODELS.map((m, idx) => ({
-			id: `${id}-${idx}`,
-			model: m,
-			answer: '',
-			isLoading: true,
-		}));
-
-		setHistory((prev) => [{ id, question, responses: loadingResponses }, ...prev]);
-
-		const filled: ModelResponse[] = await Promise.all(
-			MODELS.map(async (model, idx) => {
-				const answer = await simulateModelAnswer(model, question);
-				return { id: `${id}-${idx}`, model, answer, isLoading: false };
-			})
-		);
-
-		setHistory((prev) => prev.map((q) => (q.id === id ? { ...q, responses: filled } : q)));
-		setIsLoading(false);
+		setMessages((prev) => [...prev, { id: `${id}-you`, from: 'You', text }]);
+		setIsLoading(true);
+		// Simulate async BhaiGPT response in Hinglish
+		const delay = 400 + Math.floor(Math.random() * 800);
+		const reply = HINGLISH_RESPONSES[Math.floor(Math.random() * HINGLISH_RESPONSES.length)];
+		setTimeout(() => {
+			setMessages((prev) => [...prev, { id: `${id}-bhai`, from: 'BhaiGPT', text: reply }]);
+			setIsLoading(false);
+			requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+		}, delay);
+		requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
 	}, []);
 
-	const latest = useMemo(() => history[0], [history]);
+	const renderItem = useCallback(({ item }: { item: ChatMessage }) => (
+		<MessageCard from={item.from} text={item.text} />
+	), []);
+
+	const keyExtractor = useCallback((m: ChatMessage) => m.id, []);
 
 	return (
-		<View style={{ flex: 1, backgroundColor: 'white' }}>
-			<View style={{ flex: 1, paddingTop: 12 }}>
-				{latest ? (
-					<View>
-						<ResponseCarousel responses={latest.responses} />
-						<View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-							<Text style={{ color: '#6b7280', fontSize: 12 }}>Swipe to compare model answers</Text>
-						</View>
-					</View>
-				) : (
-					<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-						<Text style={{ color: '#6b7280' }}>Ask a question to see responses</Text>
-					</View>
-				)}
+		<View style={{ flex: 1, backgroundColor: '#000' }}>
+			<View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
+				<FlatList
+					ref={listRef}
+					data={messages}
+					renderItem={renderItem}
+					keyExtractor={keyExtractor}
+					contentContainerStyle={{ paddingBottom: 12 }}
+					showsVerticalScrollIndicator={false}
+				/>
 			</View>
-			<View style={{ borderTopWidth: 1, borderTopColor: '#e5e7eb' }}>
+			<View style={{ borderTopWidth: 1, borderTopColor: '#111827' }}>
 				<ChatInput onSend={onSend} isLoading={isLoading} />
 			</View>
 		</View>

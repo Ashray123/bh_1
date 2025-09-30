@@ -1,6 +1,6 @@
 {
   "name": "ai-multi-model-carousel",
-  "main": "expo-router/entry",
+  "main": "App.tsx",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
+    "@react-navigation/drawer": "^7.5.8",
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.10",
     "expo-constants": "~18.0.9",
