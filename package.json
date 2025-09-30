@@ -1,6 +1,6 @@
 {
   "name": "ai-multi-model-carousel",
-  "main": "App.tsx",
+  "main": "expo/AppEntry",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
