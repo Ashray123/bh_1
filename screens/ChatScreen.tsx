@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList } from 'react-native';
 import ChatInput from '../components/ChatInput';
 import MessageCard from '../components/MessageCard';
+import ResponseCarousel, { ModelResponse } from '../components/ResponseCarousel';
 
 type ChatMessage = {
 	id: string;
@@ -24,17 +25,25 @@ export const ChatScreen: React.FC = () => {
 		{ id: 'open', from: 'BhaiGPT', text: OPENING_LINE },
 	]);
 	const listRef = useRef<FlatList<ChatMessage>>(null);
+    const [carousel, setCarousel] = useState<ModelResponse[] | null>(null);
 
-	const onSend = useCallback(async (text: string) => {
+    const onSend = useCallback(async (text: string) => {
 		const id = `${Date.now()}`;
 		setMessages((prev) => [...prev, { id: `${id}-you`, from: 'You', text }]);
 		setIsLoading(true);
-		// Simulate async BhaiGPT response in Hinglish
+        // Simulate async BhaiGPT response in Hinglish and parallel mock model comparisons
 		const delay = 400 + Math.floor(Math.random() * 800);
 		const reply = HINGLISH_RESPONSES[Math.floor(Math.random() * HINGLISH_RESPONSES.length)];
+        const models = ['GPT-3.5', 'LLaMA-3', 'Claude'];
+        setCarousel(models.map((m, idx) => ({ id: `${id}-${idx}`, model: m, answer: '', isLoading: true })));
 		setTimeout(() => {
 			setMessages((prev) => [...prev, { id: `${id}-bhai`, from: 'BhaiGPT', text: reply }]);
-			setIsLoading(false);
+            // Fill carousel answers after a short delay to mimic async
+            setTimeout(() => {
+                const filled = models.map((m, idx) => ({ id: `${id}-${idx}`, model: m, answer: `${m} bolta: "${text}" ka jawaab yeh hai...`, isLoading: false }));
+                setCarousel(filled);
+                setIsLoading(false);
+            }, 300);
 			requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
 		}, delay);
 		requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
@@ -46,10 +55,15 @@ export const ChatScreen: React.FC = () => {
 
 	const keyExtractor = useCallback((m: ChatMessage) => m.id, []);
 
-	return (
-		<View style={{ flex: 1, backgroundColor: '#000' }}>
-			<View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
-				<FlatList
+    return (
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+            {carousel && (
+                <View style={{ paddingTop: 8 }}>
+                    <ResponseCarousel responses={carousel} />
+                </View>
+            )}
+            <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
+                <FlatList
 					ref={listRef}
 					data={messages}
 					renderItem={renderItem}
