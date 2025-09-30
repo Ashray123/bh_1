@@ -57,26 +57,29 @@ export const ChatScreen: React.FC = () => {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#000' }}>
-            {carousel && (
-                <View style={{ paddingTop: 8 }}>
-                    <ResponseCarousel responses={carousel} />
-                </View>
-            )}
-            <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
-                <FlatList
-					ref={listRef}
-					data={messages}
-					renderItem={renderItem}
-					keyExtractor={keyExtractor}
-					contentContainerStyle={{ paddingBottom: 12 }}
-					showsVerticalScrollIndicator={false}
-				/>
-			</View>
-			<View style={{ borderTopWidth: 1, borderTopColor: '#111827' }}>
-				<ChatInput onSend={onSend} isLoading={isLoading} />
-			</View>
-		</View>
-	);
+            <View style={{ flex: 1, paddingTop: 12 }}>
+                {carousel ? (
+                    <View style={{ paddingTop: 0 }}>
+                        <ResponseCarousel responses={carousel} />
+                    </View>
+                ) : (
+                    <View style={{ flex: 1, paddingHorizontal: 12 }}>
+                        <FlatList
+                            ref={listRef}
+                            data={messages}
+                            renderItem={renderItem}
+                            keyExtractor={keyExtractor}
+                            contentContainerStyle={{ paddingBottom: 12 }}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    </View>
+                )}
+            </View>
+            <View style={{ borderTopWidth: 1, borderTopColor: '#111827' }}>
+                <ChatInput onSend={onSend} isLoading={isLoading} />
+            </View>
+        </View>
+    );
 };
 
 export default ChatScreen;
